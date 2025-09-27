@@ -76,7 +76,6 @@ def make_pdf_preview(pdf_path):
         with open(pdf_path, "rb") as f:
             b64 = base64.b64encode(f.read()).decode("utf-8")
 
-        #HTML шаблон был доработан с использованием Chat GPT
         return f"""
         <iframe width="100%" height="100%" style="min-height:90vh;"
             srcdoc="
