@@ -28,7 +28,7 @@
    ```
    
 3. Откройте в браузере:
-👉 http://localhost:7860
+👉 http://localhost:8000
 
 4. Остановить:
     ```bash
@@ -49,11 +49,11 @@
    ```
 3. Запустите контейнер:
     ```bash
-   docker run -it --rm -p 7860:7860 color-filter-app
+   docker run -it --rm -p 8000:8000 color-filter-app
    ```
    
 4. Откройте в браузере:
-👉 http://localhost:7860
+👉 http://localhost:8000
 
 ### Вариант 3: Локально (без Docker)
 
@@ -76,7 +76,7 @@
    python application.py
    ```
 4. Откройте в браузере:
-👉 http://localhost:7860
+👉 http://localhost:8000
 
 ```
 .
