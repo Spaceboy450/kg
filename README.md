@@ -18,8 +18,8 @@
 
 1. Клонируйте репозиторий и перейдите в папку проекта:
    ```bash
-   git clone <repo_url>
-   cd <repo_name>
+   git clone https://git.miem.hse.ru/kg25-26/asro.git
+   cd asro
    ```
    
 2. Запустите:
@@ -39,8 +39,8 @@
 
 1. Клонируйте репозиторий и перейдите в папку проекта:
    ```bash
-   git clone <repo_url>
-   cd <repo_name>
+   git clone https://git.miem.hse.ru/kg25-26/asro.git
+   cd asro
    ```
 
 2. Соберите образ:
@@ -59,8 +59,8 @@
 
 1. Клонируйте репозиторий и перейдите в папку проекта:
    ```bash
-   git clone <repo_url>
-   cd <repo_name>
+   git clone https://git.miem.hse.ru/kg25-26/asro.git
+   cd asro
    ```
 2. Создайте виртуальное окружение и установите зависимости:
     ```bash
