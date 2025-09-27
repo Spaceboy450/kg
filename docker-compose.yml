@@ -6,5 +6,5 @@ services:
       - "7860:7860"
     volumes:
       - ./uploads:/app/uploads
-    command: python app.py
+    command: python application.py
     restart: unless-stopped
