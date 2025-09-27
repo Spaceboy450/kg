@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  color-filter:
+    build: .
+    container_name: computer_graphics_app
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
