@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   color-filter:
     build: .
@@ -8,4 +6,5 @@ services:
       - "7860:7860"
     volumes:
       - ./uploads:/app/uploads
+    command: python app.py
     restart: unless-stopped
