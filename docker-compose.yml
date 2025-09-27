@@ -3,7 +3,7 @@ services:
     build: .
     container_name: computer_graphics_app
     ports:
-      - "7860:7860"
+      - "8000:8000"
     volumes:
       - ./uploads:/app/uploads
     restart: unless-stopped
