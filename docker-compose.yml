@@ -1,9 +1,12 @@
+version: "3.9"
+
 services:
-  color-filter:
+  app:
     build: .
-    container_name: computer_graphics_app
+    container_name: flask_color_pdf
     ports:
       - "8000:8000"
     volumes:
-      - ./uploads:/app/uploads
-    restart: unless-stopped
+      - .:/app
+    environment:
+      - FLASK_ENV=development

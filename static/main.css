@@ -1,0 +1,44 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f8f9fa;
+}
+
+.panel {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.errors {
+  background: #ffe6e6;
+  color: #b30000;
+  padding: 10px;
+  border-radius: 6px;
+  display: none;
+  margin-top: 10px;
+}
+
+.columns {
+  display: flex;
+  gap: 20px;
+}
+
+.col {
+  flex: 1;
+}
+
+.col img {
+  max-width: 100px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+iframe {
+  width: 100%;
+  min-height: 80vh;
+  border: none;
+  margin-top: 20px;
+}

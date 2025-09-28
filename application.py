@@ -1,62 +1,137 @@
-import gradio as gr
-from src.image_processing import filter_and_sort_zip
+import os
+import tempfile
+import uuid
+import base64
+from io import BytesIO
+from flask import Flask, render_template, request, jsonify, send_file
+from PIL import Image
+
+from src.utils import hex_to_hue, is_valid_image
+from src.color_filter import filter_images_by_hue
+from src.color_distance import split_images_by_distance
+from src.pdf_utils import make_pdf_grid
+
+app = Flask(__name__)
+
+# Хранилище временных PDF по токенам
+PDF_STORAGE = {}
 
 
-def wrapper_filter_and_sort_zip(zip_file, color, tolerance, rows, cols, orientation):
+def make_preview(path: str) -> str:
+    """Создает base64 превью для отображения миниатюры в браузере."""
     try:
-        all_images, left_images, right_images, pdf_path, pdf_preview_html, error_msg = filter_and_sort_zip(
-            zip_file, color, tolerance, rows, cols, orientation
-        )
+        with Image.open(path) as img:
+            img.thumbnail((100, 100))
+            buf = BytesIO()
+            img.save(buf, format="JPEG")
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
+    except Exception:
+        return ""
 
-        if not error_msg or error_msg.strip() == "":
-            error_msg = "Ошибок нет! Программа отработала успешно!"
 
-        return all_images, left_images, right_images, pdf_path, pdf_preview_html, error_msg
+@app.route("/")
+def index():
+    return render_template("index.html")
 
+
+@app.route("/select", methods=["POST"])
+def select():
+    """Фильтрация и сортировка изображений, возвращает JSON с двумя колонками."""
+    uploaded_files = request.files.getlist("images")
+    if not uploaded_files:
+        return jsonify({"error": "Файлы не выбраны"}), 400
+
+    try:
+        target_color = request.form.get("targetColor", "#ff0000")
+        tolerance = float(request.form.get("tolerance", 10))
+        target_hue = hex_to_hue(target_color)
     except Exception as e:
-        return [], [], [], None, "", f"Ошибка при обработке: {str(e)}"
+        return jsonify({"error": f"Некорректные параметры: {e}"}), 400
+
+    errors = []
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filenames = []
+        for file in uploaded_files:
+            fname = os.path.basename(file.filename)
+            path = os.path.join(tmpdir, fname)
+            file.save(path)
+            if is_valid_image(path):
+                filenames.append(fname)
+
+        filtered, err1 = filter_images_by_hue(tmpdir, target_hue, tolerance)
+        all_images, left_col, right_col, err2 = split_images_by_distance(tmpdir, filtered, target_hue)
+        errors.extend(err1 + err2)
+
+        def serialize(records):
+            return [
+                {
+                    "caption": f"{fname} — Δ{dist:.1f}°",
+                    "preview": make_preview(os.path.join(tmpdir, fname)),
+                }
+                for fname, _, dist in records
+            ]
+
+        return jsonify({"left": serialize(left_col), "right": serialize(right_col), "errors": errors})
 
 
-with gr.Blocks() as demo:
-    gr.Markdown("## Фильтр изображений по цвету (ZIP) + PDF")
+@app.route("/process", methods=["POST"])
+def process():
+    """Формирование PDF с выбранными параметрами."""
+    uploaded_files = request.files.getlist("images")
+    if not uploaded_files:
+        return jsonify({"error": "Файлы не выбраны"}), 400
 
-    with gr.Row():
-        upload = gr.File(label="Загрузить ZIP", file_types=[".zip"], type="file")
+    try:
+        target_color = request.form.get("targetColor", "#ff0000")
+        tolerance = float(request.form.get("tolerance", 10))
+        rows = max(1, min(5, int(request.form.get("rows", 5))))
+        cols = max(1, min(5, int(request.form.get("cols", 5))))
+        orientation = request.form.get("orientation", "portrait")
+        target_hue = hex_to_hue(target_color)
+    except Exception as e:
+        return jsonify({"error": f"Некорректные параметры: {e}"}), 400
 
-    color = gr.ColorPicker(value="#ff0000", label="Цвет")
-    tolerance = gr.Slider(0, 100, value=10, label="Допуск (%)")
+    errors = []
 
-    with gr.Row():
-        rows = gr.Slider(1, 5, value=5, step=1, label="Количество строк")
-        cols = gr.Slider(1, 5, value=5, step=1, label="Количество колонок")
-        orientation = gr.Radio(
-            ["portrait", "landscape"],
-            value="portrait",
-            label="Ориентация страницы",
-        )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        filenames = []
+        for file in uploaded_files:
+            fname = os.path.basename(file.filename)
+            path = os.path.join(tmpdir, fname)
+            file.save(path)
+            if is_valid_image(path):
+                filenames.append(fname)
 
-    filter_btn = gr.Button("Отобрать")
+        filtered, err1 = filter_images_by_hue(tmpdir, target_hue, tolerance)
+        all_images, _, _, err2 = split_images_by_distance(tmpdir, filtered, target_hue)
+        errors.extend(err1 + err2)
 
-    with gr.Tabs():
-        with gr.TabItem("Все подходящие"):
-            all_images = gr.Gallery(label="Все изображения", show_label=True, columns=4)
-        with gr.TabItem("Против часовой"):
-            left_images = gr.Gallery(label="Левая колонка", show_label=True, columns=4)
-        with gr.TabItem("По часовой"):
-            right_images = gr.Gallery(label="Правая колонка", show_label=True, columns=4)
+        records = [
+            (os.path.join(tmpdir, fname), f"{fname} — Δ{dist:.1f}°")
+            for fname, _, dist in all_images
+        ]
 
-    with gr.Row():
-        pdf_download = gr.File(label="Скачать PDF", interactive=False)
+        pdf_path, pdf_errors = make_pdf_grid(records, rows=rows, cols=cols, orientation=orientation)
+        errors.extend(pdf_errors)
 
-    pdf_preview = gr.HTML(label="Предпросмотр PDF")
-    error_box = gr.Textbox(label="Ошибки обработки", interactive=False, lines=10)
+        if not pdf_path:
+            return jsonify({"error": "Не удалось создать PDF", "errors": errors}), 500
 
-    filter_btn.click(
-        wrapper_filter_and_sort_zip,
-        [upload, color, tolerance, rows, cols, orientation],
-        [all_images, left_images, right_images, pdf_download, pdf_preview, error_box],
-    )
+        token = str(uuid.uuid4())
+        PDF_STORAGE[token] = pdf_path
+
+        return jsonify({"pdf_url": f"/download/{token}", "errors": errors, "count": len(records)})
+
+
+@app.route("/download/<token>")
+def download(token):
+    """Отдача PDF по токену."""
+    pdf_path = PDF_STORAGE.get(token)
+    if not pdf_path or not os.path.exists(pdf_path):
+        return "PDF не найден", 404
+    return send_file(pdf_path, as_attachment=False, mimetype="application/pdf")
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)

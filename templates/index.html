@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF по цвету</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+</head>
+<body>
+  <h1>🎨 Обработка изображений по цвету</h1>
+
+  <div class="panel">
+    <form id="uploadForm">
+      <label>Выберите изображения (папка):
+        <input type="file" name="images" id="images" webkitdirectory multiple required>
+      </label><br><br>
+
+      <label>Целевой цвет: <input type="color" name="targetColor" value="#ff0000"></label><br>
+      <label>Допуск (%): <input type="number" name="tolerance" value="10" min="1" max="100"></label><br>
+      <label>Строки (1–5): <input type="number" name="rows" value="5" min="1" max="5"></label><br>
+      <label>Столбцы (1–5): <input type="number" name="cols" value="5" min="1" max="5"></label><br>
+      <label>Ориентация:
+        <select name="orientation">
+          <option value="portrait">Портрет</option>
+          <option value="landscape">Альбом</option>
+        </select>
+      </label><br><br>
+
+      <button type="button" id="selectAndGenerateBtn">Отобрать и сгенерировать PDF</button>
+    </form>
+
+    <div id="errorBlock" class="errors"></div>
+  </div>
+
+  <div id="selectionResult" style="display:none;">
+    <h2>Результат отбора</h2>
+    <div class="columns">
+      <div class="col">
+        <h3>Отклонение против часовой</h3>
+        <div id="leftColumn"></div>
+      </div>
+      <div class="col">
+        <h3>Отклонение по часовой</h3>
+        <div id="rightColumn"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById("uploadForm");
+    const errorBlock = document.getElementById("errorBlock");
+    const resultDiv = document.getElementById("result");
+
+    document.getElementById("selectAndGenerateBtn").addEventListener("click", async () => {
+      const formData = new FormData(form);
+      errorBlock.style.display = "none";
+      document.getElementById("leftColumn").innerHTML = "";
+      document.getElementById("rightColumn").innerHTML = "";
+      resultDiv.innerHTML = "Обработка...";
+
+      try {
+        // 1. Сначала отбор
+        const respSelect = await fetch("/select", { method: "POST", body: formData });
+        const dataSelect = await respSelect.json();
+
+        if (dataSelect.error) {
+          errorBlock.style.display = "block";
+          errorBlock.innerHTML = `<strong>${dataSelect.error}</strong>`;
+          resultDiv.innerHTML = "";
+          return;
+        }
+
+        if (dataSelect.errors && dataSelect.errors.length) {
+          errorBlock.style.display = "block";
+          errorBlock.innerHTML = "<strong>Ошибки:</strong><ul>" +
+            dataSelect.errors.map(e => `<li>${e}</li>`).join("") + "</ul>";
+        }
+
+        dataSelect.left.forEach(item => {
+          document.getElementById("leftColumn").innerHTML +=
+            `<div><img src="data:image/jpeg;base64,${item.preview}"><br>${item.caption}</div>`;
+        });
+        dataSelect.right.forEach(item => {
+          document.getElementById("rightColumn").innerHTML +=
+            `<div><img src="data:image/jpeg;base64,${item.preview}"><br>${item.caption}</div>`;
+        });
+
+        document.getElementById("selectionResult").style.display = "block";
+
+        // 2. Затем генерация PDF
+        const respProcess = await fetch("/process", { method: "POST", body: formData });
+        const dataProcess = await respProcess.json();
+
+        if (dataProcess.error) {
+          errorBlock.style.display = "block";
+          errorBlock.innerHTML = `<strong>${dataProcess.error}</strong>`;
+          resultDiv.innerHTML = "";
+          return;
+        }
+
+        resultDiv.innerHTML = `
+          <iframe src="${dataProcess.pdf_url}"></iframe>
+          <p><a href="${dataProcess.pdf_url}" download="result.pdf">⬇️ Скачать PDF</a></p>
+        `;
+
+      } catch (err) {
+        errorBlock.style.display = "block";
+        errorBlock.innerHTML = `<strong>Ошибка:</strong> ${err}`;
+        resultDiv.innerHTML = "";
+      }
+    });
+  </script>
+</body>
+</html>
