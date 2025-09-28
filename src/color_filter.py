@@ -3,8 +3,7 @@ from src.utils import get_dominant_hue, is_valid_image
 from src.color_distance import hue_distance
 
 
-def filter_images_by_hue(folder, target_hue, hue_tolerance_percent):
-    hue_tolerance_deg = 360 * (hue_tolerance_percent / 100)
+def filter_images_by_hue(folder, target_hue, hue_tolerance_deg):
     result, errors = [], []
 
     for fname in os.listdir(folder):

@@ -15,7 +15,7 @@
       </label><br><br>
 
       <label>Целевой цвет: <input type="color" name="targetColor" value="#ff0000"></label><br>
-      <label>Допуск (%): <input type="number" name="tolerance" value="10" min="1" max="100"></label><br>
+      <label>Допуск (°): <input type="number" name="tolerance" value="10" min="1" max="180"></label><br>
       <label>Строки (1–5): <input type="number" name="rows" value="5" min="1" max="5"></label><br>
       <label>Столбцы (1–5): <input type="number" name="cols" value="5" min="1" max="5"></label><br>
       <label>Ориентация:
@@ -51,12 +51,20 @@
     const form = document.getElementById("uploadForm");
     const errorBlock = document.getElementById("errorBlock");
     const resultDiv = document.getElementById("result");
+    const selectionResult = document.getElementById("selectionResult");
 
     document.getElementById("selectAndGenerateBtn").addEventListener("click", async () => {
       const formData = new FormData(form);
+
+      // 🔹 Полный сброс состояния перед новой обработкой
       errorBlock.style.display = "none";
+      errorBlock.innerHTML = "";
       document.getElementById("leftColumn").innerHTML = "";
       document.getElementById("rightColumn").innerHTML = "";
+      resultDiv.innerHTML = "";
+      selectionResult.style.display = "none";
+
+      // Сообщение о процессе
       resultDiv.innerHTML = "Обработка...";
 
       try {
@@ -86,7 +94,7 @@
             `<div><img src="data:image/jpeg;base64,${item.preview}"><br>${item.caption}</div>`;
         });
 
-        document.getElementById("selectionResult").style.display = "block";
+        selectionResult.style.display = "block";
 
         // 2. Затем генерация PDF
         const respProcess = await fetch("/process", { method: "POST", body: formData });

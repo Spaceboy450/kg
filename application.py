@@ -43,7 +43,7 @@ def select():
 
     try:
         target_color = request.form.get("targetColor", "#ff0000")
-        tolerance = float(request.form.get("tolerance", 10))
+        tolerance = float(request.form.get("tolerance", 10))  # теперь уже градусы
         target_hue = hex_to_hue(target_color)
     except Exception as e:
         return jsonify({"error": f"Некорректные параметры: {e}"}), 400
@@ -84,7 +84,7 @@ def process():
 
     try:
         target_color = request.form.get("targetColor", "#ff0000")
-        tolerance = float(request.form.get("tolerance", 10))
+        tolerance = float(request.form.get("tolerance", 10))  # теперь градусы
         rows = max(1, min(5, int(request.form.get("rows", 5))))
         cols = max(1, min(5, int(request.form.get("cols", 5))))
         orientation = request.form.get("orientation", "portrait")

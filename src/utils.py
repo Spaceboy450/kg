@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 import colorsys
-from statistics import mean
+from collections import Counter
 
 VALID_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
 
@@ -15,18 +15,26 @@ def get_dominant_hue(image_path):
     try:
         with Image.open(image_path) as img:
             img = img.convert("RGB")
+
             hues = []
             for r, g, b in img.getdata():
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                hues.append(h * 360)
-            return mean(hues) if hues else None
+                if s > 0.2 and v > 0.2:
+                    hues.append(int(h * 360))
+
+            if not hues:
+                return None
+
+            counter = Counter(hues)
+            dominant_hue, _ = counter.most_common(1)[0]
+            return dominant_hue
+
     except Exception:
         return None
 
 
 def hex_to_hue(color_hex):
-    #Переводит HEX (#rrggbb) в hue (0–360)
-
+    """Переводит HEX (#rrggbb) в hue (0–360)."""
     try:
         color_hex = (color_hex or "#000000").lstrip("#")
         r, g, b = (
