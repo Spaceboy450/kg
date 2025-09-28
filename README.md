@@ -59,7 +59,7 @@
 ```
 project-root/
 ├── application.py            
-├── pdf_utils.py              
+├── .gitignore            
 ├── requirements.txt         
 ├── Dockerfile                
 ├── docker-compose.yml        
@@ -67,7 +67,8 @@ project-root/
 │
 ├── src/                      
 │   ├── __init__.py
-│   ├── color_distance.py     
+│   ├── color_distance.py 
+│   ├── pdf_utils.py  
 │   ├── color_filter.py       
 │   └── utils.py              
 │

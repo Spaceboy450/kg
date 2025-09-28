@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>PDF по цвету</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+  <style>
+    .empty-msg {
+      color: #666;
+      font-style: italic;
+      padding: 5px;
+    }
+  </style>
 </head>
 <body>
   <h1>🎨 Обработка изображений по цвету</h1>
@@ -53,10 +60,45 @@
     const resultDiv = document.getElementById("result");
     const selectionResult = document.getElementById("selectionResult");
 
+    let lastPdfUrl = null;
+    let lastImageUrls = [];
+
+    function clearObjectUrls() {
+      if (lastPdfUrl) {
+        URL.revokeObjectURL(lastPdfUrl);
+        lastPdfUrl = null;
+      }
+      lastImageUrls.forEach(url => URL.revokeObjectURL(url));
+      lastImageUrls = [];
+    }
+
+    function renderPreview(base64, caption, container) {
+      const byteChars = atob(base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      lastImageUrls.push(url);
+
+      const wrapper = document.createElement("div");
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.maxWidth = "100px";
+      const label = document.createElement("div");
+      label.innerText = caption;
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(label);
+      container.appendChild(wrapper);
+    }
+
     document.getElementById("selectAndGenerateBtn").addEventListener("click", async () => {
       const formData = new FormData(form);
 
-      // 🔹 Полный сброс состояния перед новой обработкой
+      // 🔹 Сброс состояния
       errorBlock.style.display = "none";
       errorBlock.innerHTML = "";
       document.getElementById("leftColumn").innerHTML = "";
@@ -64,11 +106,12 @@
       resultDiv.innerHTML = "";
       selectionResult.style.display = "none";
 
-      // Сообщение о процессе
+      clearObjectUrls();
+
       resultDiv.innerHTML = "Обработка...";
 
       try {
-        // 1. Сначала отбор
+        // 1. Отбор
         const respSelect = await fetch("/select", { method: "POST", body: formData });
         const dataSelect = await respSelect.json();
 
@@ -85,18 +128,24 @@
             dataSelect.errors.map(e => `<li>${e}</li>`).join("") + "</ul>";
         }
 
-        dataSelect.left.forEach(item => {
-          document.getElementById("leftColumn").innerHTML +=
-            `<div><img src="data:image/jpeg;base64,${item.preview}"><br>${item.caption}</div>`;
-        });
-        dataSelect.right.forEach(item => {
-          document.getElementById("rightColumn").innerHTML +=
-            `<div><img src="data:image/jpeg;base64,${item.preview}"><br>${item.caption}</div>`;
-        });
+        const leftCol = document.getElementById("leftColumn");
+        const rightCol = document.getElementById("rightColumn");
+
+        if (dataSelect.left.length > 0) {
+          dataSelect.left.forEach(item => renderPreview(item.preview, item.caption, leftCol));
+        } else {
+          leftCol.innerHTML = "<p class='empty-msg'>❌ Нет изображений в этой категории</p>";
+        }
+
+        if (dataSelect.right.length > 0) {
+          dataSelect.right.forEach(item => renderPreview(item.preview, item.caption, rightCol));
+        } else {
+          rightCol.innerHTML = "<p class='empty-msg'>❌ Нет изображений в этой категории</p>";
+        }
 
         selectionResult.style.display = "block";
 
-        // 2. Затем генерация PDF
+        // 2. Генерация PDF
         const respProcess = await fetch("/process", { method: "POST", body: formData });
         const dataProcess = await respProcess.json();
 
@@ -107,9 +156,14 @@
           return;
         }
 
+        const pdfResp = await fetch(dataProcess.pdf_url);
+        const pdfBuffer = await pdfResp.arrayBuffer();
+        const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
+        lastPdfUrl = URL.createObjectURL(pdfBlob);
+
         resultDiv.innerHTML = `
-          <iframe src="${dataProcess.pdf_url}"></iframe>
-          <p><a href="${dataProcess.pdf_url}" download="result.pdf">⬇️ Скачать PDF</a></p>
+          <iframe src="${lastPdfUrl}"></iframe>
+          <p><a href="${lastPdfUrl}" download="result.pdf">⬇️ Скачать PDF</a></p>
         `;
 
       } catch (err) {

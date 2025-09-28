@@ -1,39 +1,116 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
   margin: 20px;
-  background: #f8f9fa;
+  background: #f4f6f9;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 .panel {
   background: #fff;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   margin-bottom: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+form label {
+  display: block;
+  margin: 10px 0;
+  font-weight: 500;
+}
+
+input, select, button {
+  margin-top: 5px;
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 10px 18px;
+  font-size: 15px;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #0056b3;
 }
 
 .errors {
   background: #ffe6e6;
   color: #b30000;
-  padding: 10px;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 8px;
   display: none;
-  margin-top: 10px;
+  margin-top: 15px;
+  font-size: 14px;
 }
 
 .columns {
   display: flex;
   gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .col {
   flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.col h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #444;
+}
+
+.col div {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 12px;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.col div:hover {
+  transform: scale(1.03);
+  background: #f0f4ff;
 }
 
 .col img {
-  max-width: 100px;
-  display: block;
-  margin-bottom: 5px;
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-msg {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+  background: #fafafa;
+  border: 1px dashed #ccc;
+  border-radius: 10px;
 }
 
 iframe {
@@ -41,4 +118,26 @@ iframe {
   min-height: 80vh;
   border: none;
   margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+#result p {
+  text-align: center;
+  margin-top: 10px;
+}
+
+#result a {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+#result a:hover {
+  background: #1e7e34;
 }
