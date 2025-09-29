@@ -74,17 +74,20 @@ def select():
                 filenames.append(fname)
 
         filtered, err1 = filter_images_by_hue(tmpdir, target_hue, tolerance)
-        all_images, left_col, right_col, err2 = split_images_by_distance(tmpdir, filtered, target_hue)
+        all_images, left_col, right_col, err2 = split_images_by_distance(
+            tmpdir, filtered, target_hue, tolerance=tolerance
+        )
         errors.extend(err1 + err2)
 
         def serialize(records):
             return [
                 {
                     "caption": f"{fname} — Δ{dist:.1f}°",
-                    "preview": make_preview(os.path.join(tmpdir, fname))[0],
-                    "mime": make_preview(os.path.join(tmpdir, fname))[1],
+                    "preview": prev,
+                    "mime": mime,
                 }
                 for fname, _, dist in records
+                for prev, mime in [make_preview(os.path.join(tmpdir, fname))]
             ]
 
         return jsonify({"left": serialize(left_col), "right": serialize(right_col), "errors": errors})
@@ -119,7 +122,9 @@ def process():
                 filenames.append(fname)
 
         filtered, err1 = filter_images_by_hue(tmpdir, target_hue, tolerance)
-        all_images, _, _, err2 = split_images_by_distance(tmpdir, filtered, target_hue)
+        all_images, _, _, err2 = split_images_by_distance(
+            tmpdir, filtered, target_hue, tolerance=tolerance
+        )
         errors.extend(err1 + err2)
 
         records = [

@@ -11,30 +11,35 @@ def is_valid_image(path):
     return os.path.isfile(path) and ext in VALID_EXT
 
 
-def get_dominant_hue(image_path):
+def get_dominant_hue(image_path, tolerance=10):
     try:
         with Image.open(image_path) as img:
             img = img.convert("RGB")
+
+            bin_size = max(1, tolerance // 2)
 
             hues = []
             for r, g, b in img.getdata():
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
                 if s > 0.2 and v > 0.2:
-                    hues.append(int(h * 360))
+                    hue_deg = int(h * 360)
+                    bucket = (hue_deg // bin_size) * bin_size
+                    hues.append(bucket % 360)
 
             if not hues:
                 return None
 
             counter = Counter(hues)
-            dominant_hue, _ = counter.most_common(1)[0]
-            return dominant_hue
+            dominant_bin, _ = counter.most_common(1)[0]
+
+            return (dominant_bin + bin_size / 2) % 360
 
     except Exception:
         return None
 
 
 def hex_to_hue(color_hex):
-    """Переводит HEX (#rrggbb) в hue (0–360)."""
+    #Переводит HEX (#rrggbb) в hue (0–360).
     try:
         color_hex = (color_hex or "#000000").lstrip("#")
         r, g, b = (

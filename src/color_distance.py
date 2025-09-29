@@ -7,7 +7,7 @@ def hue_distance(h1, h2):
     return min(diff, 360 - diff)
 
 
-def split_images_by_distance(folder, filenames, target_hue):
+def split_images_by_distance(folder, filenames, target_hue, tolerance=10):
     all_images, left_column, right_column, errors = [], [], [], []
 
     for fname in filenames:
@@ -15,7 +15,7 @@ def split_images_by_distance(folder, filenames, target_hue):
         if not is_valid_image(path):
             continue
 
-        hue = get_dominant_hue(path)
+        hue = get_dominant_hue(path, tolerance=tolerance)
         if hue is None:
             errors.append(f"{fname}: не удалось определить цвет")
             continue

@@ -11,7 +11,7 @@ def filter_images_by_hue(folder, target_hue, hue_tolerance_deg):
         if not is_valid_image(path):
             continue
 
-        dominant_hue = get_dominant_hue(path)
+        dominant_hue = get_dominant_hue(path, tolerance=hue_tolerance_deg)
         if dominant_hue is None:
             errors.append(f"{fname}: невозможно определить доминирующий цвет")
             continue
