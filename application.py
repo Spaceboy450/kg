@@ -17,16 +17,30 @@ app = Flask(__name__)
 PDF_STORAGE = {}
 
 
-def make_preview(path: str) -> str:
-    """Создает base64 превью для отображения миниатюры в браузере."""
+def make_preview(path: str) -> tuple[str, str]:
+    """Создает base64 превью и MIME-тип для отображения миниатюры в браузере."""
     try:
         with Image.open(path) as img:
             img.thumbnail((100, 100))
+
+            # Определяем формат
+            ext = os.path.splitext(path)[1].lower()
+            if ext in (".jpg", ".jpeg"):
+                fmt, mime = "JPEG", "image/jpeg"
+            else:
+                fmt, mime = "PNG", "image/png"
+
+            if img.mode in ("RGBA", "LA", "P"):
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                bg.paste(img, mask=img.split()[-1] if img.mode in ("RGBA", "LA") else None)
+                img = bg
+
             buf = BytesIO()
-            img.save(buf, format="JPEG")
-            return base64.b64encode(buf.getvalue()).decode("utf-8")
-    except Exception:
-        return ""
+            img.save(buf, format=fmt)
+            return base64.b64encode(buf.getvalue()).decode("utf-8"), mime
+    except Exception as e:
+        print(f"[PREVIEW ERROR] {path}: {e}")
+        return "", "image/jpeg"
 
 
 @app.route("/")
@@ -43,7 +57,7 @@ def select():
 
     try:
         target_color = request.form.get("targetColor", "#ff0000")
-        tolerance = float(request.form.get("tolerance", 10))  # теперь уже градусы
+        tolerance = float(request.form.get("tolerance", 10))
         target_hue = hex_to_hue(target_color)
     except Exception as e:
         return jsonify({"error": f"Некорректные параметры: {e}"}), 400
@@ -67,7 +81,8 @@ def select():
             return [
                 {
                     "caption": f"{fname} — Δ{dist:.1f}°",
-                    "preview": make_preview(os.path.join(tmpdir, fname)),
+                    "preview": make_preview(os.path.join(tmpdir, fname))[0],
+                    "mime": make_preview(os.path.join(tmpdir, fname))[1],
                 }
                 for fname, _, dist in records
             ]
@@ -84,7 +99,7 @@ def process():
 
     try:
         target_color = request.form.get("targetColor", "#ff0000")
-        tolerance = float(request.form.get("tolerance", 10))  # теперь градусы
+        tolerance = float(request.form.get("tolerance", 10))
         rows = max(1, min(5, int(request.form.get("rows", 5))))
         cols = max(1, min(5, int(request.form.get("cols", 5))))
         orientation = request.form.get("orientation", "portrait")
